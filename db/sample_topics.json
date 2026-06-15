@@ -1,0 +1,60 @@
+[
+  {
+    "id": "00000000-0000-0000-0000-000000000001",
+    "subject": "CHEMISTRY",
+    "tier": "PRIMARY",
+    "title": "Oxygen & Combustion",
+    "slug": "oxygen-combustion",
+    "story_content": "A candle needs oxygen to burn. If you put a glass over a lit candle, the flame will slowly go out because it uses up the oxygen. Plants can make oxygen again when they are in sunlight.",
+    "video_url": "",
+    "lab_config": {
+      "assets": ["candle","beaker","leaf"],
+      "rules": [{"when":"beaker_on_candle","effect":"reduce_oxygen","amount":50},{"when":"leaf_in_beaker","effect":"increase_oxygen","amount":30}]
+    },
+    "sort_order": 1
+  },
+  {
+    "id": "00000000-0000-0000-0000-000000000002",
+    "subject": "PHYSICS",
+    "tier": "JSS",
+    "title": "States of Matter Basics",
+    "slug": "states-of-matter",
+    "story_content": "Matter can be a solid, liquid, or gas. Heating or cooling can change matter from one state to another. Think about ice melting into water when warmed.",
+    "video_url": "",
+    "lab_config": {"assets":["ice","heat-source"],"rules":[]},
+    "sort_order": 2
+  },
+  {
+    "id": "00000000-0000-0000-0000-000000000003",
+    "subject": "BIOLOGY",
+    "tier": "PRIMARY",
+    "title": "Photosynthesis Explained",
+    "slug": "photosynthesis-basics",
+    "story_content": "Plants use sunlight to make food. This process is called photosynthesis. It needs sunlight, water, and carbon dioxide. The plant makes glucose (energy) and releases oxygen as a byproduct—this is the oxygen we breathe!",
+    "video_url": "",
+    "lab_config": {"assets":["plant","sunlight","water"],"rules":[{"when":"sunlight_on_plant","effect":"increase_oxygen","amount":40}]},
+    "sort_order": 3
+  },
+  {
+    "id": "00000000-0000-0000-0000-000000000004",
+    "subject": "CHEMISTRY",
+    "tier": "JSS",
+    "title": "Mixing & Chemical Reactions",
+    "slug": "mixing-reactions",
+    "story_content": "When you mix certain chemicals, they can react with each other to create new substances. Some reactions release heat (exothermic) and some absorb heat (endothermic). Always be careful when mixing chemicals!",
+    "video_url": "",
+    "lab_config": {"assets":["chemical-a","chemical-b","container"],"rules":[{"when":"chemical-a_mixed_with_chemical-b","effect":"reduce_oxygen","amount":25}]},
+    "sort_order": 4
+  },
+  {
+    "id": "00000000-0000-0000-0000-000000000005",
+    "subject": "PHYSICS",
+    "tier": "PRIMARY",
+    "title": "Heat & Temperature Transfer",
+    "slug": "heat-transfer",
+    "story_content": "Temperature tells us how hot or cold something is. Heat moves from hot things to cold things. When you put a cold spoon in hot tea, heat transfers to the spoon and it gets warm too.",
+    "video_url": "",
+    "lab_config": {"assets":["hot-object","cold-object","thermometer"],"rules":[{"when":"objects_touch","effect":"balance_temperature","amount":15}]},
+    "sort_order": 5
+  }
+]

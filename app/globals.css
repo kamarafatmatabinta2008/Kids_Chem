@@ -1,0 +1,4 @@
+@import '../styles/globals.css';
+
+/* app-level overrides for Next */
+:root { --app-ready: 1; }

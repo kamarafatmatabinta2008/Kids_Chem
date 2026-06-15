@@ -1,0 +1,36 @@
+[
+  {
+    "topic_slug": "oxygen-combustion",
+    "questions": [
+      {
+        "question_text": "What does a candle need to keep burning?",
+        "options": ["Nitrogen", "Oxygen", "Carbon Dioxide", "Water"],
+        "correct_option": "Oxygen",
+        "explanation": "A candle needs oxygen from the air to maintain combustion (burning). Without it, the flame goes out!"
+      },
+      {
+        "question_text": "What happens when you put a glass over a lit candle?",
+        "options": ["It burns brighter", "The glass melts", "The flame goes out", "Nothing changes"],
+        "correct_option": "The flame goes out",
+        "explanation": "The glass traps a limited amount of air. Once the candle uses up the oxygen inside, it can no longer burn."
+      }
+    ]
+  },
+  {
+    "topic_slug": "states-of-matter",
+    "questions": [
+      {
+        "question_text": "Which state of matter has a fixed shape and volume?",
+        "options": ["Gas", "Liquid", "Solid", "Plasma"],
+        "correct_option": "Solid",
+        "explanation": "In a solid, particles are packed closely together, giving it a stable shape and volume."
+      },
+      {
+        "question_text": "What process turns a solid into a liquid?",
+        "options": ["Freezing", "Melting", "Evaporation", "Condensation"],
+        "correct_option": "Melting",
+        "explanation": "Melting occurs when heat is added to a solid, causing its particles to move more freely and become a liquid."
+      }
+    ]
+  }
+]
