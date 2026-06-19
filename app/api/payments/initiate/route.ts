@@ -1,23 +1,21 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/src/lib/supabase-server'
 import { createMonimeCheckoutSession } from '@/src/lib/monime'
 import { v4 as uuidv4 } from 'uuid'
+import { prisma } from '@/src/lib/prisma'
+import { getUser } from '@/src/lib/auth'
 
 export async function POST() {
   try {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 0.1 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Verify role is 'parent'
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
+    const profile = await prisma.profile.findUnique({
+      where: { id: user.id }
+    })
 
     if (profile?.role !== 'parent') {
       return NextResponse.json({ error: 'Only parents can manage subscriptions' }, { status: 403 })
@@ -33,21 +31,19 @@ export async function POST() {
       reference,
       successUrl: `${origin}/dashboard/parent?payment=success`,
       cancelUrl: `${origin}/dashboard/parent?payment=cancelled`,
-      customerEmail: user.email
+      customerEmail: user.phoneNumber
     })
 
     // 2. Log pending transaction
-    const { error: txError } = await supabase
-      .from('monime_transactions')
-      .insert({
-        parent_id: user.id,
+    await prisma.monimeTransaction.create({
+      data: {
+        parentId: user.id,
         amount: price,
-        phone_number: 'N/A', // Monime handles this on their page
-        monime_reference: session.id, // Using Monime's ID as our internal reference for mapping
+        phoneNumber: 'N/A', 
+        monimeReference: session.id,
         status: 'PENDING'
-      })
-
-    if (txError) throw txError
+      }
+    })
 
     return NextResponse.json({ url: session.redirectUrl })
   } catch (error: any) {

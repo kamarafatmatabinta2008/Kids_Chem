@@ -1,13 +1,10 @@
-import { createClient } from '@supabase/supabase-js'
+import { PrismaClient } from '@prisma/client'
 import { OpenAI } from 'openai'
 import dotenv from 'dotenv'
 
 dotenv.config({ path: '.env.local' })
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+const prisma = new PrismaClient()
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
@@ -37,14 +34,12 @@ const KNOWLEDGE_BASE = [
 ]
 
 async function ingest() {
-  console.log('Starting knowledge ingestion...')
+  console.log('Starting knowledge ingestion with Prisma...')
 
   for (const item of KNOWLEDGE_BASE) {
-    const { data: topic } = await supabase
-      .from('topics')
-      .select('id')
-      .eq('slug', item.topic_slug)
-      .single()
+    const topic = await prisma.topic.findUnique({
+      where: { slug: item.topic_slug }
+    })
 
     if (!topic) {
       console.log(`Topic ${item.topic_slug} not found, skipping.`)
@@ -60,21 +55,18 @@ async function ingest() {
         input: fact,
       })
       const embedding = embeddingResponse.data[0].embedding
+      const vectorStr = `[${embedding.join(',')}]`
 
-      // 2. Store in DB
-      const { error } = await supabase
-        .from('topic_embeddings')
-        .insert({
-          topic_id: topic.id,
-          content: fact,
-          embedding,
-          metadata: { source: 'textbook-v1', type: 'core-fact' }
-        })
+      // 2. Store in DB using Raw SQL for vector (Prisma doesn't support vector types yet)
+      try {
+        await prisma.$executeRawUnsafe(`
+          INSERT INTO topic_embeddings (id, topic_id, content, embedding, metadata, created_at)
+          VALUES (gen_random_uuid(), '${topic.id}'::uuid, $1, '${vectorStr}'::vector, $2, NOW())
+        `, fact, { source: 'textbook-v1', type: 'core-fact' })
 
-      if (error) {
-        console.error(`Error storing fact: ${error.message}`)
-      } else {
         console.log(`Successfully stored fact: ${fact.substring(0, 30)}...`)
+      } catch (error: any) {
+        console.error(`Error storing fact: ${error.message}`)
       }
     }
   }
@@ -82,4 +74,6 @@ async function ingest() {
   console.log('Ingestion complete.')
 }
 
-ingest().catch(console.error)
+ingest()
+  .catch(console.error)
+  .finally(() => prisma.$disconnect())

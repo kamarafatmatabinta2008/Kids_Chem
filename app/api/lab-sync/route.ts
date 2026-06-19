@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/src/lib/supabase-server'
+import { prisma } from '@/src/lib/prisma'
+import { getUser } from '@/src/lib/auth'
 
 export async function POST(request: Request) {
   try {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getUser()
     
-    // In a real scenario, we'd map user.id to a student_id
-    // For MVP/Demo, we might just use the user.id if they are the student
     if (!user) {
       return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
     }
@@ -17,33 +15,39 @@ export async function POST(request: Request) {
     const topicSlug = storageKey?.replace('lab_state_', '') || 'unknown'
 
     // First, find a student for this user (parent)
-    const { data: student } = await supabase
-      .from('students')
-      .select('id')
-      .eq('parent_id', user.id)
-      .limit(1)
-      .single()
+    const student = await prisma.student.findFirst({
+      where: { parentId: user.id }
+    })
 
     if (!student) {
       return NextResponse.json({ ok: false, error: 'No student profile found' }, { status: 400 })
     }
 
-    const { error } = await supabase
-      .from('lab_states')
-      .upsert({
-        student_id: student.id,
-        topic_slug: topicSlug,
-        oxygen_level: oxygen,
-        flame_on: flameOn,
-        last_trigger: trigger,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'student_id, topic_slug' })
-
-    if (error) throw error
+    await prisma.labState.upsert({
+      where: {
+        studentId_topicSlug: {
+          studentId: student.id,
+          topicSlug: topicSlug
+        }
+      },
+      update: {
+        oxygenLevel: oxygen,
+        flameOn: flameOn,
+        lastTrigger: trigger,
+        updatedAt: new Date()
+      },
+      create: {
+        studentId: student.id,
+        topicSlug: topicSlug,
+        oxygenLevel: oxygen,
+        flameOn: flameOn,
+        lastTrigger: trigger
+      }
+    })
 
     return NextResponse.json({ ok: true })
-  } catch (err) {
+  } catch (err: any) {
     console.error('lab-sync error:', err)
-    return NextResponse.json({ ok: false, error: String(err) }, { status: 400 })
+    return NextResponse.json({ ok: false, error: err.message }, { status: 400 })
   }
 }

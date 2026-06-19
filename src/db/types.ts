@@ -6,6 +6,7 @@ export type PaymentStatus = 'PENDING' | 'SUCCESSFUL' | 'FAILED';
 
 export interface Profile {
   id: string;
+  phone_number: string;
   full_name: string;
   role: UserRole;
   created_at: string;
@@ -50,9 +51,11 @@ export interface Topic {
   tier: ScienceTier;
   title: string;
   slug: string;
-  story_content: string;
-  video_url?: string;
-  lab_config: Record<string, any>;
+  textbook_source: string;
+  raw_textbook_excerpt: string;
+  simplified_150_story: string;
+  lab_matrix_config: Record<string, any>;
+  video_cdn_url?: string;
   sort_order: number;
 }
 

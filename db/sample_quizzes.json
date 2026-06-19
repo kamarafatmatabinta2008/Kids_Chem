@@ -32,5 +32,56 @@
         "explanation": "Melting occurs when heat is added to a solid, causing its particles to move more freely and become a liquid."
       }
     ]
+  },
+  {
+    "topic_slug": "photosynthesis-basics",
+    "questions": [
+      {
+        "question_text": "What three things do plants need for photosynthesis?",
+        "options": ["Soil, fertilizer, and water", "Sunlight, water, and carbon dioxide", "Light, soil, and oxygen", "Water, sugar, and nitrogen"],
+        "correct_option": "Sunlight, water, and carbon dioxide",
+        "explanation": "Plants use sunlight, water, and carbon dioxide to produce glucose (energy) and oxygen through photosynthesis."
+      },
+      {
+        "question_text": "What gas do plants release during photosynthesis?",
+        "options": ["Carbon dioxide", "Nitrogen", "Oxygen", "Hydrogen"],
+        "correct_option": "Oxygen",
+        "explanation": "Plants release oxygen as a byproduct of photosynthesis — this is the oxygen we breathe!"
+      }
+    ]
+  },
+  {
+    "topic_slug": "mixing-reactions",
+    "questions": [
+      {
+        "question_text": "What happens in a chemical reaction?",
+        "options": ["A change in shape only", "New substances are created", "A change in temperature only", "The substances disappear"],
+        "correct_option": "New substances are created",
+        "explanation": "In a chemical reaction, substances combine or break apart to form entirely new substances with different properties."
+      },
+      {
+        "question_text": "What does \"exothermic\" mean in a chemical reaction?",
+        "options": ["The reaction absorbs heat", "The reaction releases heat", "The reaction needs light", "The reaction produces gas"],
+        "correct_option": "The reaction releases heat",
+        "explanation": "Exothermic reactions release heat energy, making the surroundings warmer. Endothermic reactions absorb heat."
+      }
+    ]
+  },
+  {
+    "topic_slug": "heat-transfer",
+    "questions": [
+      {
+        "question_text": "How does heat naturally move between objects?",
+        "options": ["From cold to hot", "From hot to cold", "It stays in place", "It disappears"],
+        "correct_option": "From hot to cold",
+        "explanation": "Heat always flows from hotter objects to cooler objects until they reach the same temperature."
+      },
+      {
+        "question_text": "What does a thermometer measure?",
+        "options": ["Weight", "Speed", "Temperature", "Volume"],
+        "correct_option": "Temperature",
+        "explanation": "A thermometer measures temperature — how hot or cold something is. It does not measure heat energy directly."
+      }
+    ]
   }
 ]

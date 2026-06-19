@@ -1,12 +1,7 @@
-import { createClient } from '@/src/lib/supabase-server'
+import { destroySession } from '@/src/lib/auth'
 import { NextResponse } from 'next/server'
 
-export async function POST(request: Request) {
-  const supabase = createClient()
-  await supabase.auth.signOut()
-  
-  const url = new URL(request.url)
-  return NextResponse.redirect(new URL('/', url.origin), {
-    status: 303,
-  })
+export async function POST() {
+  await destroySession()
+  return NextResponse.redirect(new URL('/login', 'http://localhost:3000'), { status: 303 })
 }

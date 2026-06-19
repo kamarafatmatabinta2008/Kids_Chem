@@ -1,32 +1,38 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/src/lib/supabase-server'
+import { prisma } from '@/src/lib/prisma'
 
 export async function GET(request: Request) {
-  const supabase = createClient()
   const url = new URL(request.url)
   const slug = url.searchParams.get('slug')
 
-  if (slug) {
-    const { data, error } = await supabase
-      .from('topics')
-      .select('*')
-      .eq('slug', slug)
-      .single()
+  try {
+    if (slug) {
+      const topic = await prisma.topic.findUnique({
+        where: { slug },
+        include: {
+          quiz: {
+            include: {
+              questions: true
+            }
+          }
+        }
+      })
 
-    if (error || !data) {
-      return NextResponse.json({ error: 'Topic not found' }, { status: 404 })
+      if (!topic) {
+        return NextResponse.json({ error: 'Topic not found' }, { status: 404 })
+      }
+      return NextResponse.json(topic)
     }
-    return NextResponse.json(data)
-  }
 
-  const { data, error } = await supabase
-    .from('topics')
-    .select('*')
-    .order('sort_order', { ascending: true })
+    const topics = await prisma.topic.findMany({
+      orderBy: {
+        sortOrder: 'asc'
+      }
+    })
 
-  if (error) {
+    return NextResponse.json(topics)
+  } catch (error: any) {
+    console.error('Topics API Error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
-
-  return NextResponse.json(data)
 }

@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS public.subscriptions (
   tier_price_leones NUMERIC(10,2) DEFAULT 5.00 NOT NULL,
   period_start TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   period_end TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 

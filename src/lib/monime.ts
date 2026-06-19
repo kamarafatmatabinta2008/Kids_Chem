@@ -43,6 +43,7 @@ export async function createMonimeCheckoutSession(params: {
       successUrl: params.successUrl,
       cancelUrl: params.cancelUrl,
       metadata: {
+      
         reference: params.reference
       }
     })
@@ -62,7 +63,7 @@ export async function createMonimeCheckoutSession(params: {
   } as MonimeCheckoutSession
 }
 
-export function verifyMonimeSignature(payload: string, signature: string) {
+export function verifyMonimeSignature(_payload: string, _signature: string) {
   // Monime webhook signature verification logic goes here
   // For now, we'll implement a basic check against the secret if provided in headers
   // Usually involves HMAC-SHA256

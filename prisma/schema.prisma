@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  parent
+  teacher
+  student
+}
+
+enum ScienceTier {
+  PRIMARY
+  JSS
+}
+
+enum ScienceSubject {
+  BIOLOGY
+  CHEMISTRY
+  PHYSICS
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESSFUL
+  FAILED
+}
+
+model Profile {
+  id                String             @id @default(uuid()) @db.Uuid
+  phoneNumber       String             @unique @map("phone_number")
+  passwordHash      String             @map("password_hash")
+  fullName          String             @map("full_name")
+  role              UserRole           @default(parent)
+  createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  students          Student[]
+  subscriptions     Subscription[]
+  transactions      MonimeTransaction[]
+
+  @@map("profiles")
+}
+
+model Student {
+  id                     String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  parentId               String          @db.Uuid @map("parent_id")
+  fullName               String          @map("full_name")
+  tier                   ScienceTier
+  targetedWeakness       ScienceSubject? @map("targeted_weakness")
+  continuousStreakDays   Int             @default(0) @map("continuous_streak_days")
+  avatarUrl              String?         @map("avatar_url")
+  createdAt              DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  parent                 Profile         @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  quizAttempts           QuizAttempt[]
+  labStates              LabState[]
+
+  @@map("students")
+}
+
+model Subscription {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  parentId         String   @db.Uuid @map("parent_id")
+  isProActive      Boolean  @default(false) @map("is_pro_active")
+  tierPriceLeones  Decimal  @default(5.00) @map("tier_price_leones") @db.Decimal(10, 2)
+  periodStart      DateTime @default(now()) @map("period_start") @db.Timestamptz(6)
+  periodEnd        DateTime @map("period_end") @db.Timestamptz(6)
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  parent           Profile  @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  transactions     MonimeTransaction[]
+
+  @@map("subscriptions")
+}
+
+model MonimeTransaction {
+  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  parentId           String        @db.Uuid @map("parent_id")
+  subscriptionId     String?       @db.Uuid @map("subscription_id")
+  amount             Decimal       @db.Decimal(10, 2)
+  phoneNumber        String        @map("phone_number")
+  monimeReference    String        @unique @map("monime_reference")
+  status             PaymentStatus @default(PENDING)
+  webhookRawPayload  Json?         @map("webhook_raw_payload")
+  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  parent             Profile       @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  subscription       Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@map("monime_transactions")
+}
+
+model Topic {
+  id                  String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subject             ScienceSubject
+  tier                ScienceTier
+  textbookSource      String         @map("textbook_source")
+  title               String
+  slug                String         @unique
+  rawTextbookExcerpt  String         @map("raw_textbook_excerpt")
+  simplified150Story  String         @map("simplified_150_story")
+  labMatrixConfig     Json           @map("lab_matrix_config")
+  videoCdnUrl         String?        @map("video_cdn_url")
+  sortOrder           Int            @map("sort_order")
+
+  quiz                Quiz?
+  embeddings          TopicEmbedding[]
+
+  @@map("topics")
+}
+
+model Quiz {
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  topicId      String         @unique @db.Uuid @map("topic_id")
+  passingScore Int            @default(80) @map("passing_score")
+
+  topic        Topic          @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  questions    QuizQuestion[]
+  attempts     QuizAttempt[]
+
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id                        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  quizId                    String   @db.Uuid @map("quiz_id")
+  questionText              String   @map("question_text")
+  options                   Json
+  correctOption             String   @map("correct_option")
+  explanationsFromTextbook  String   @map("explanations_from_textbook")
+
+  quiz                      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  attempts                  QuizAttempt[]
+
+  @@unique([quizId, questionText])
+  @@map("quiz_questions")
+}
+
+model QuizAttempt {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId        String   @db.Uuid @map("student_id")
+  quizId           String   @db.Uuid @map("quiz_id")
+  questionId       String   @db.Uuid @map("question_id")
+  selectedOption   String   @map("selected_option")
+  isCorrect        Boolean  @map("is_correct")
+  attemptIteration Int      @default(1) @map("attempt_iteration")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  student          Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  quiz             Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  question         QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@map("quiz_attempts")
+}
+
+model LabState {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId   String   @db.Uuid @map("student_id")
+  topicSlug   String   @map("topic_slug")
+  oxygenLevel Int      @default(100) @map("oxygen_level")
+  flameOn     Boolean  @default(true) @map("flame_on")
+  lastTrigger String?  @map("last_trigger")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, topicSlug])
+  @@map("lab_states")
+}
+
+model TopicEmbedding {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  topicId   String   @db.Uuid @map("topic_id")
+  content   String
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  topic     Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@map("topic_embeddings")
+}

@@ -1,151 +1,130 @@
-import { createClient } from '@/src/lib/supabase-server'
+import { redirect } from 'next/navigation'
+import { prisma } from '@/src/lib/prisma'
+import { getUser } from '@/src/lib/auth'
 import Link from 'next/link'
+import HomeClient from './HomeClient'
 
 export default async function Home() {
-  const supabase = createClient()
-  
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  const { data: topics, error } = await supabase
-    .from('topics')
-    .select('*, quizzes(id)')
-    .order('sort_order', { ascending: true })
+  const user = await getUser()
+  if (!user) redirect('/register')
 
-  let masteryData: any[] = []
-  if (user) {
-    const { data: student } = await supabase
-      .from('students')
-      .select('id')
-      .eq('parent_id', user.id)
-      .limit(1)
-      .single()
+  const topics = await prisma.topic.findMany({
+    include: { quiz: true },
+    orderBy: { sortOrder: 'asc' }
+  })
 
-    if (student) {
-      const { data: attempts } = await supabase
-        .from('quiz_attempts')
-        .select('quiz_id, is_correct')
-        .eq('student_id', student.id)
-      
-      masteryData = attempts || []
+  const profile = await prisma.profile.findUnique({
+    where: { id: user.id },
+    include: {
+      students: {
+        include: {
+          quizAttempts: { select: { quizId: true, isCorrect: true } }
+        }
+      }
     }
-  }
+  })
 
-  const isMastered = (quizId: string) => {
-    return masteryData.some(a => a.quiz_id === quizId && a.is_correct)
-  }
+  const student = profile?.students?.[0]
+  const masteryData = student?.quizAttempts || []
+  const masteredQuizIds = new Set(masteryData.filter(a => a.isCorrect).map(a => a.quizId))
 
   return (
-    <main className="min-h-screen bg-canvas">
-      <div className="max-w-6xl mx-auto p-8">
-        <header className="flex justify-between items-center mb-12">
-          <div>
-            <h1 className="text-4xl font-extrabold text-slate tracking-tight">Kids<span className="text-blue-600">Chem</span></h1>
-            <p className="text-slate/60 font-medium italic">Interactive Science Playground</p>
+    <HomeClient
+      studentName={student?.fullName || 'Scientist'}
+      streakDays={student?.continuousStreakDays || 0}
+      masteredCount={masteredQuizIds.size}
+      totalTopics={topics.length}
+    >
+      {/* Topics Grid */}
+      <section className="mb-16">
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-3xl font-black text-[#FAF9F6]">Your Learning Path</h2>
+          <div className="flex gap-1.5">
+            <span className="w-3 h-3 rounded-full bg-[#8CE600]" />
+            <span className="w-3 h-3 rounded-full bg-[#A3FF00]" />
+            <span className="w-3 h-3 rounded-full bg-[#8CE600]" />
           </div>
-          <div className="flex gap-4 items-center">
-            {user ? (
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-bold text-slate-700">Hi, Explorer! 👋</span>
-                <form action="/api/auth/signout" method="post">
-                  <button className="text-xs font-bold text-slate-400 hover:text-red-500 uppercase tracking-widest">Sign Out</button>
-                </form>
-              </div>
-            ) : (
-              <>
-                <Link href="/login" className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-blue-600">Sign In</Link>
-                <Link href="/register" className="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition-colors">Start Learning</Link>
-              </>
-            )}
-          </div>
-        </header>
+        </div>
 
-        <section className="mb-16">
-          <div className="bg-blue-600 rounded-[3rem] p-12 text-white shadow-2xl relative overflow-hidden">
-            <div className="relative z-10 flex flex-col md:flex-row items-center gap-10">
-              <div className="flex-1">
-                <h2 className="text-4xl font-black mb-4">Science Adventure Map 🚀</h2>
-                <p className="text-blue-100 text-xl mb-8 leading-relaxed">
-                  Your mission is to explore every topic and collect all the Mastery Badges. 
-                  Ready to uncover the secrets of the universe?
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {topics.map((topic) => {
+            const isMastered = topic.quiz ? masteredQuizIds.has(topic.quiz.id) : false
+            const subjectEmoji: Record<string, string> = { CHEMISTRY: '🧪', PHYSICS: '⚡', BIOLOGY: '🌿' }
+            const subjectColor: Record<string, string> = {
+              CHEMISTRY: 'from-purple-600 to-purple-800',
+              PHYSICS: 'from-blue-600 to-cyan-600',
+              BIOLOGY: 'from-emerald-600 to-green-700'
+            }
+            const subjectBadge: Record<string, string> = {
+              CHEMISTRY: 'bg-purple-900/50 text-purple-300',
+              PHYSICS: 'bg-blue-900/50 text-blue-300',
+              BIOLOGY: 'bg-emerald-900/50 text-emerald-300'
+            }
+
+            return (
+              <Link
+                key={topic.id}
+                href={`/topics/${topic.slug}`}
+                className={`group relative bg-[#12142D] p-6 rounded-[2rem] border-2 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:shadow-[#8CE600]/10 ${
+                  isMastered
+                    ? 'border-[#8CE600]/50 shadow-[#8CE600]/10'
+                    : 'border-[#22254F]'
+                }`}
+              >
+                {isMastered && (
+                  <div className="absolute -top-3 -right-3 w-9 h-9 bg-[#8CE600] text-[#090A1A] rounded-full flex items-center justify-center shadow-lg animate-bounce text-sm font-black">
+                    ⭐
+                  </div>
+                )}
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl mb-4 bg-gradient-to-br ${subjectColor[topic.subject] || 'from-slate-600 to-slate-800'}`}>
+                  <span className="drop-shadow-lg">{subjectEmoji[topic.subject] || '🔬'}</span>
+                </div>
+                <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${subjectBadge[topic.subject] || 'bg-slate-800 text-slate-400'}`}>
+                  {topic.subject}
+                </span>
+                <h3 className="text-lg font-black text-[#FAF9F6] mt-3 mb-2 group-hover:text-[#8CE600] transition-colors">
+                  {topic.title}
+                </h3>
+                <p className="text-[#8888AA] font-medium text-sm line-clamp-2 leading-relaxed">
+                  {topic.simplified150Story}
                 </p>
-                <Link href="/topics/oxygen-combustion" className="inline-block px-10 py-5 bg-white text-blue-600 font-black rounded-2xl shadow-xl hover:bg-blue-50 transition-all transform hover:-translate-y-1 active:scale-95">
-                  Continue Mission
-                </Link>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="w-32 h-32 bg-white/20 rounded-3xl backdrop-blur-md flex flex-col items-center justify-center border border-white/30">
-                  <div className="text-3xl mb-1">🔥</div>
-                  <div className="text-[10px] font-black uppercase">Streak</div>
-                  <div className="text-xl font-black">5 Days</div>
+                <div className={`mt-4 flex items-center font-black text-xs uppercase tracking-widest ${
+                  isMastered ? 'text-[#8CE600]' : 'text-[#A3FF00]'
+                }`}>
+                  {isMastered ? '✓ Mastered' : 'Start →'}
                 </div>
-                <div className="w-32 h-32 bg-emerald-500/80 rounded-3xl backdrop-blur-md flex flex-col items-center justify-center border border-white/30">
-                  <div className="text-3xl mb-1">🏅</div>
-                  <div className="text-[10px] font-black uppercase">Mastery</div>
-                  <div className="text-xl font-black">{topics?.filter(t => isMastered(t.quizzes?.id)).length || 0} Topics</div>
-                </div>
-              </div>
-            </div>
-            <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-blue-400/30 rounded-full blur-3xl" />
-          </div>
-        </section>
+              </Link>
+            )
+          })}
+        </div>
+      </section>
 
-        <section>
-          <div className="flex items-center justify-between mb-10">
-            <h3 className="text-3xl font-black text-slate-900 tracking-tight">Your Learning Path</h3>
-            <div className="flex gap-2">
-              <div className="w-3 h-3 bg-emerald-500 rounded-full" />
-              <div className="w-3 h-3 bg-blue-500 rounded-full" />
-              <div className="w-3 h-3 bg-slate-200 rounded-full" />
-            </div>
+      {/* Quick Access Strip */}
+      <section className="mb-16">
+        <h2 className="text-2xl font-black text-[#FAF9F6] mb-6">🚀 Science HQ</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Link href="/books" className="group bg-gradient-to-br from-[#8CE600] to-[#A3FF00] rounded-[2rem] p-6 text-[#090A1A] shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all">
+            <div className="text-4xl mb-3">📚</div>
+            <h3 className="font-black text-lg">Science Books</h3>
+            <p className="text-[#090A1A]/70 text-sm font-medium mt-1">Read & learn</p>
+          </Link>
+          <Link href="/videos" className="group bg-gradient-to-br from-[#12142D] to-[#1a1c3a] rounded-[2rem] p-6 text-[#FAF9F6] shadow-lg border border-[#22254F] hover:shadow-xl hover:-translate-y-1 transition-all">
+            <div className="text-4xl mb-3">🎬</div>
+            <h3 className="font-black text-lg">Video Lab</h3>
+            <p className="text-[#8888AA] text-sm font-medium mt-1">Watch & explore</p>
+          </Link>
+          <Link href="/lab" className="group bg-gradient-to-br from-[#12142D] to-[#1a1c3a] rounded-[2rem] p-6 text-[#FAF9F6] shadow-lg border border-[#22254F] hover:shadow-xl hover:-translate-y-1 transition-all">
+            <div className="text-4xl mb-3">🔬</div>
+            <h3 className="font-black text-lg">Virtual Lab</h3>
+            <p className="text-[#8888AA] text-sm font-medium mt-1">Experiment now</p>
+          </Link>
+          <div className="bg-gradient-to-br from-[#12142D] to-[#1a1c3a] rounded-[2rem] p-6 text-[#FAF9F6] shadow-lg border border-[#22254F]">
+            <div className="text-4xl mb-3">🤖</div>
+            <h3 className="font-black text-lg">Sci-Buddy</h3>
+            <p className="text-[#8888AA] text-sm font-medium mt-1">Ask me anything!</p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {error ? (
-              <p className="text-red-500">Error loading topics. Please check your database connection.</p>
-            ) : topics?.map((topic) => {
-              const mastered = isMastered(topic.quizzes?.id)
-              return (
-                <Link 
-                  key={topic.id} 
-                  href={`/topics/${topic.slug}`}
-                  className={`group relative bg-white p-8 rounded-[2rem] border-2 transition-all duration-500 ${
-                    mastered 
-                    ? 'border-emerald-100 hover:border-emerald-300 shadow-emerald-50 shadow-lg' 
-                    : 'border-slate-100 hover:border-blue-300 hover:shadow-2xl shadow-slate-100 shadow-sm'
-                  }`}
-                >
-                  {mastered && (
-                    <div className="absolute -top-3 -right-3 w-10 h-10 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-lg animate-bounce">
-                      ⭐
-                    </div>
-                  )}
-                  
-                  <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mb-6 transition-all ${
-                    mastered ? 'bg-emerald-100' : 'bg-slate-100 group-hover:bg-blue-100 group-hover:scale-110'
-                  }`}>
-                    {topic.subject === 'CHEMISTRY' ? '🧪' : topic.subject === 'PHYSICS' ? '⚡' : '🌿'}
-                  </div>
-                  
-                  <h4 className="text-2xl font-black text-slate-900 mb-3 group-hover:text-blue-600 transition-colors">
-                    {topic.title}
-                  </h4>
-                  
-                  <p className="text-slate-500 font-medium line-clamp-2 mb-6 leading-relaxed">
-                    {topic.story_content}
-                  </p>
-                  
-                  <div className={`flex items-center font-black text-sm uppercase tracking-widest ${
-                    mastered ? 'text-emerald-600' : 'text-blue-600'
-                  }`}>
-                    {mastered ? 'Topic Mastered' : 'Start Journey'} 
-                    <span className="ml-2 group-hover:translate-x-2 transition-transform">→</span>
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-        </section>
-      </div>
-    </main>
+        </div>
+      </section>
+    </HomeClient>
   )
 }

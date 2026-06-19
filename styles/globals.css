@@ -2,16 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
-:root{
-  --color-canvas: #FAF9F6;
-  --color-slate: #111111;
-  --color-boundary: #DCDCD4;
-  --color-emerald: #2F8F7D;
+:root {
+  --color-deep: #090A1A;
+  --color-neon: #8CE600;
+  --color-neon-light: #A3FF00;
+  --color-surface: #12142D;
+  --color-border: #22254F;
+  --color-text: #FAF9F6;
+  --color-text-muted: #8888AA;
 }
 
-html,body,#root { height: 100%; }
+html, body, #root { height: 100%; }
 
-body { @apply bg-canvas text-slate; font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; }
+body {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  background-color: var(--color-deep);
+  color: var(--color-text);
+}
 
-/* Minimal utility for the Lab Box container */
-.lab-box { border: 1px solid var(--color-boundary); border-radius: 12px; background: white; }
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+  .animation-delay-75 { animation-delay: 75ms; }
+  .animation-delay-150 { animation-delay: 150ms; }
+  .animation-delay-300 { animation-delay: 300ms; }
+  .neon-glow { box-shadow: 0 0 20px rgba(140, 230, 0, 0.3); }
+  .neon-border { border-color: var(--color-neon); }
+  .bg-neon { background-color: var(--color-neon); }
+  .text-neon { color: var(--color-neon); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; transform: scale(1); box-shadow: 0 0 10px rgba(140, 230, 0, 0.2); }
+  50% { opacity: 0.8; transform: scale(1.05); box-shadow: 0 0 30px rgba(140, 230, 0, 0.5); }
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1) rotate(180deg); }
+}
+
+@keyframes neon-pulse {
+  0%, 100% { border-color: #8CE600; }
+  50% { border-color: #A3FF00; }
+}
+
+.animate-float { animation: float 3s ease-in-out infinite; }
+.animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+.animate-sparkle { animation: sparkle 1.5s ease-in-out infinite; }
+.animate-neon-pulse { animation: neon-pulse 2s ease-in-out infinite; }
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #090A1A; border-radius: 10px; }
+::-webkit-scrollbar-thumb { background: #22254F; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #8CE600; }
